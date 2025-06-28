@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import urllib.parse
 
 # Set page configuration with custom logo and app name
 st.set_page_config(
@@ -22,11 +21,19 @@ if password != correct_password:
 # File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
 
-# Custom CSS for bordered box and WhatsApp button
+# Custom CSS for bordered box and copy button
 st.markdown("""
     <style>
-    .product-box {
+    .product-box-green {
         border: 2px solid #4CAF50;
+        border-radius: 8px;
+        padding: 10px;
+        margin: 10px 0;
+        background-color: #f9f9f9;
+        text-align: center;
+    }
+    .product-box-gray {
+        border: 2px solid #808080;
         border-radius: 8px;
         padding: 10px;
         margin: 10px 0;
@@ -41,19 +48,20 @@ st.markdown("""
         margin-top: 10px;
         font-size: 0.9em;
     }
-    .whatsapp-button {
+    .copy-button {
         display: inline-block;
         margin-top: 10px;
         padding: 8px 16px;
-        background-color: #25D366;
+        background-color: #4CAF50;
         color: white;
         text-decoration: none;
         border-radius: 5px;
         font-size: 0.9em;
         font-weight: bold;
+        cursor: pointer;
     }
-    .whatsapp-button:hover {
-        background-color: #20b358;
+    .copy-button:hover {
+        background-color: #45a049;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -113,19 +121,22 @@ if orders_file is not None:
                     image_url = df_final.iloc[idx]['Image Src']
                     size_quantity = df_final.iloc[idx]['Size & Quantity']
                     
-                    # Encode share message for WhatsApp
-                    share_message = f"{product_name}: {size_quantity}\nImage: {image_url}"
-                    encoded_message = urllib.parse.quote(share_message)
-                    whatsapp_url = f"https://api.whatsapp.com/send?text={encoded_message}"
+                    # Checkbox to toggle box color
+                    checkbox_key = f"gray_border_{idx}"
+                    is_gray = st.checkbox("Gray Border", key=checkbox_key)
+                    box_class = "product-box-gray" if is_gray else "product-box-green"
                     
-                    # Render the box with product details and WhatsApp share button
+                    # Format text for clipboard
+                    clipboard_text = f"Product: {product_name}, Sizes: {size_quantity}"
+                    
+                    # Render the box with product details, copy button, and checkbox
                     st.markdown(
                         f"""
-                        <div class="product-box">
+                        <div class="{box_class}">
                             <div class="product-name">{product_name}</div>
                             <img src="{image_url}" style="max-width:100%; height:auto;" onerror="this.src='https://via.placeholder.com/150';">
                             <div class="size-quantity">{size_quantity}</div>
-                            <a href="{whatsapp_url}" target="_blank" class="whatsapp-button">Share on WhatsApp</a>
+                            <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy Details</button>
                         </div>
                         """,
                         unsafe_allow_html=True
