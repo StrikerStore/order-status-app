@@ -30,7 +30,7 @@ if password != correct_password:
 # File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
 
-# Custom CSS for bordered box, copy button, and custom checkbox
+# Custom CSS for bordered box, copy button, and checkbox
 st.markdown("""
     <style>
     .product-box-green {
@@ -73,33 +73,25 @@ st.markdown("""
     .copy-button:hover {
         background-color: #87b5ff;
     }
+    .stCheckbox > label > div > input {
+        accent-color: #03045e;
+        border: 2px solid #03045e;
+        width: 18px;
+        height: 18px;
+        border-radius: 3px;
+        margin-top: 4px;
+    }
+    .stCheckbox > label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
     .button-checkbox-container {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 10px;
         margin-top: 10px;
-    }
-    .custom-checkbox {
-        appearance: none;
-        width: 18px;
-        height: 18px;
-        border: 2px solid #03045e;
-        border-radius: 3px;
-        background-color: white;
-        cursor: pointer;
-        position: relative;
-    }
-    .custom-checkbox:checked {
-        background-color: #03045e;
-    }
-    .custom-checkbox:checked::after {
-        content: '✔';
-        color: white;
-        font-size: 14px;
-        position: absolute;
-        top: 0;
-        left: 3px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -167,20 +159,30 @@ if orders_file is not None:
                     # Format text for clipboard
                     clipboard_text = f"Product: {product_name}, Sizes: {size_quantity}"
                     
-                    # Render the box with product details, copy button, and checkbox
+                    # Render the box with product details
                     st.markdown(
                         f"""
                         <div class="{box_class}">
                             <div class="product-name">{product_name}</div>
                             <img src="{image_url}" style="max-width:100%; height:auto;" onerror="this.src='https://via.placeholder.com/150';">
                             <div class="size-quantity">{size_quantity}</div>
-                            <div class="button-checkbox-container">
-                                <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy</button>
-                                <input type="Shared" class="custom-checkbox" {'checked' if is_gray else ''}>
-                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
-else:
-    st.write("Please upload the orders CSV file to proceed.")
+                    
+                    # Place button and checkbox side by side
+                    with st.container():
+                        button_col, checkbox_col = st.columns([3, 1])
+                        with button_col:
+                            st.markdown(
+                                f"""
+                                <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy Details</button>
+                                """,
+                                unsafe_allow_html=True
+                            )
+                        with checkbox_col:
+                            st.checkbox("Gray Border", key=f"visible_checkbox_{idx}", value=is_gray, label_visibility="visible")
+
+            else:
+                st.write("Please upload the orders CSV file to proceed.")
