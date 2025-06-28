@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
 
-# Set page configuration with custom icon and title
+# Set page configuration with custom logo and app name
 st.set_page_config(
-    page_title="Order Status",
-    page_icon="square_logo.png",  # Path to icon in repository
-    layout="wide",  # Optional: Wider layout for better mobile display
+    page_title="Jersey Orders",  # Custom app name
+    page_icon="square_logo.png",  # Path to logo in repository
+    layout="wide",  # Wider layout for better mobile display
 )
 
 # Streamlit app title
-st.title("Order Status Display")
+st.title("Jersey Orders")
 
 # Password protection
 password = st.text_input("Enter password:", type="password")
