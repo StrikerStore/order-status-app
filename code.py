@@ -4,6 +4,14 @@ import pandas as pd
 # Streamlit app title
 st.title("Order Status Display")
 
+# Password protection
+password = st.text_input("Enter password:", type="password")
+correct_password = "your_secure_password"  # Set your password here
+
+if password != correct_password:
+    st.error("Incorrect password. Access denied.")
+    st.stop()
+
 # File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
 
