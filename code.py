@@ -1,12 +1,21 @@
 import streamlit as st
 import pandas as pd
+import os
 
-# Set page configuration with custom logo and app name
-st.set_page_config(
-    page_title="Jersey Orders",
-    page_icon="square_logo.png",
-    layout="wide",
-)
+# Set page configuration with custom logo and app name, with fallback
+logo_path = "square_logo.png"
+if os.path.exists(logo_path):
+    st.set_page_config(
+        page_title="Jersey Orders",
+        page_icon=logo_path,
+        layout="wide",
+    )
+else:
+    st.set_page_config(
+        page_title="Jersey Orders",
+        layout="wide",
+    )
+    st.warning("logo.png not found in the repository. Using default icon.")
 
 # Streamlit app title
 st.title("Jersey Orders")
@@ -21,7 +30,7 @@ if password != correct_password:
 # File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
 
-# Custom CSS for bordered box and copy button
+# Custom CSS for bordered box, copy button, and custom checkbox
 st.markdown("""
     <style>
     .product-box-green {
@@ -50,18 +59,47 @@ st.markdown("""
     }
     .copy-button {
         display: inline-block;
-        margin-top: 10px;
+        margin: 10px 5px 0 5px;
         padding: 8px 16px;
-        background-color: #4CAF50;
-        color: white;
+        background-color: #a2d2ff;
+        color: #03045e;
         text-decoration: none;
         border-radius: 5px;
         font-size: 0.9em;
         font-weight: bold;
         cursor: pointer;
+        border: none;
     }
     .copy-button:hover {
-        background-color: #45a049;
+        background-color: #87b5ff;
+    }
+    .button-checkbox-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .custom-checkbox {
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #03045e;
+        border-radius: 3px;
+        background-color: white;
+        cursor: pointer;
+        position: relative;
+    }
+    .custom-checkbox:checked {
+        background-color: #03045e;
+    }
+    .custom-checkbox:checked::after {
+        content: '✔';
+        color: white;
+        font-size: 14px;
+        position: absolute;
+        top: 0;
+        left: 3px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -123,7 +161,7 @@ if orders_file is not None:
                     
                     # Checkbox to toggle box color
                     checkbox_key = f"gray_border_{idx}"
-                    is_gray = st.checkbox("Gray Border", key=checkbox_key)
+                    is_gray = st.checkbox("", key=checkbox_key, label_visibility="collapsed")
                     box_class = "product-box-gray" if is_gray else "product-box-green"
                     
                     # Format text for clipboard
@@ -136,7 +174,10 @@ if orders_file is not None:
                             <div class="product-name">{product_name}</div>
                             <img src="{image_url}" style="max-width:100%; height:auto;" onerror="this.src='https://via.placeholder.com/150';">
                             <div class="size-quantity">{size_quantity}</div>
-                            <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy Details</button>
+                            <div class="button-checkbox-container">
+                                <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy</button>
+                                <input type="Shared" class="custom-checkbox" {'checked' if is_gray else ''}>
+                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True
