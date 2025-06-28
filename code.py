@@ -30,10 +30,14 @@ if password != correct_password:
 # File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
 
-# Custom CSS for bordered box, copy button, and checkbox
+# Initialize session state for checkbox status
+if 'checked_boxes' not in st.session_state:
+    st.session_state.checked_boxes = {}
+
+# Custom CSS for bordered box and copy button
 st.markdown("""
     <style>
-    .product-box-green {
+    .product-box {
         border: 2px solid #4CAF50;
         border-radius: 8px;
         padding: 10px;
@@ -42,12 +46,7 @@ st.markdown("""
         text-align: center;
     }
     .product-box-gray {
-        border: 2px solid #808080;
-        border-radius: 8px;
-        padding: 10px;
-        margin: 10px 0;
-        background-color: #f9f9f9;
-        text-align: center;
+        border-color: #808080 !important;
     }
     .product-name {
         font-weight: bold;
@@ -73,24 +72,7 @@ st.markdown("""
     .copy-button:hover {
         background-color: #87b5ff;
     }
-    .stCheckbox > label > div > input {
-        accent-color: #03045e;
-        border: 2px solid #03045e;
-        width: 18px;
-        height: 18px;
-        border-radius: 3px;
-        margin-top: 4px;
-    }
-    .stCheckbox > label {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-    .button-checkbox-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
+    .checkbox-container {
         margin-top: 10px;
     }
     </style>
@@ -151,38 +133,37 @@ if orders_file is not None:
                     image_url = df_final.iloc[idx]['Image Src']
                     size_quantity = df_final.iloc[idx]['Size & Quantity']
                     
-                    # Checkbox to toggle box color
-                    checkbox_key = f"gray_border_{idx}"
-                    is_gray = st.checkbox("", key=checkbox_key, label_visibility="collapsed")
-                    box_class = "product-box-gray" if is_gray else "product-box-green"
+                    # Generate a unique key for each checkbox
+                    checkbox_key = f"checkbox_{idx}"
                     
                     # Format text for clipboard
                     clipboard_text = f"Product: {product_name}, Sizes: {size_quantity}"
                     
-                    # Render the box with product details
+                    # Determine the box class based on checkbox state
+                    box_class = "product-box-gray" if st.session_state.checked_boxes.get(checkbox_key, False) else "product-box"
+                    
+                    # Display the product box
                     st.markdown(
                         f"""
                         <div class="{box_class}">
                             <div class="product-name">{product_name}</div>
                             <img src="{image_url}" style="max-width:100%; height:auto;" onerror="this.src='https://via.placeholder.com/150';">
                             <div class="size-quantity">{size_quantity}</div>
+                            <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy Details</button>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
                     
-                    # Place button and checkbox side by side
-                    with st.container():
-                        button_col, checkbox_col = st.columns([3, 1])
-                        with button_col:
-                            st.markdown(
-                                f"""
-                                <button class="copy-button" onclick="navigator.clipboard.writeText('{clipboard_text}')">Copy Details</button>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                        with checkbox_col:
-                            st.checkbox("Gray Border", key=f"visible_checkbox_{idx}", value=is_gray, label_visibility="visible")
-
+                    # Add the checkbox and update session state on change
+                    checked = st.checkbox(
+                        "Mark as complete",
+                        key=checkbox_key,
+                        value=st.session_state.checked_boxes.get(checkbox_key, False),
+                        on_change=lambda k=checkbox_key: st.session_state.checked_boxes.update({k: not st.session_state.checked_boxes.get(k, False)})
+                    )
+                    
+                    # Update the session state
+                    st.session_state.checked_boxes[checkbox_key] = checked
             else:
                 st.write("Please upload the orders CSV file to proceed.")
