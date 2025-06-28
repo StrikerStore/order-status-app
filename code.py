@@ -6,7 +6,7 @@ st.title("Order Status Display")
 
 # Password protection
 password = st.text_input("Enter password:", type="password")
-correct_password = "your_secure_password"  # Set your password here
+correct_password = "353614"  # Set your password here
 
 if password != correct_password:
     st.error("Incorrect password. Access denied.")
