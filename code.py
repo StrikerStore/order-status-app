@@ -1,13 +1,19 @@
 import streamlit as st
 import pandas as pd
 
+# Set page configuration with custom icon and title
+st.set_page_config(
+    page_title="Order Status",
+    page_icon="square_logo.png",  # Path to icon in repository
+    layout="wide",  # Optional: Wider layout for better mobile display
+)
+
 # Streamlit app title
 st.title("Order Status Display")
 
 # Password protection
 password = st.text_input("Enter password:", type="password")
-correct_password = "353614"  # Set your password here
-
+correct_password = "353614"  # Replace with your strong password
 if password != correct_password:
     st.error("Incorrect password. Access denied.")
     st.stop()
