@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
+import urllib.parse
 
 # Set page configuration with custom logo and app name
 st.set_page_config(
-    page_title="Jersey Orders",  # Custom app name
-    page_icon="square_logo.png",  # Path to logo in repository
-    layout="wide",  # Wider layout for better mobile display
+    page_title="Jersey Orders",
+    page_icon="square_logo.png",
+    layout="wide",
 )
 
 # Streamlit app title
@@ -21,7 +22,7 @@ if password != correct_password:
 # File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
 
-# Custom CSS for bordered box
+# Custom CSS for bordered box and WhatsApp button
 st.markdown("""
     <style>
     .product-box {
@@ -39,6 +40,20 @@ st.markdown("""
     .size-quantity {
         margin-top: 10px;
         font-size: 0.9em;
+    }
+    .whatsapp-button {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 8px 16px;
+        background-color: #25D366;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+    .whatsapp-button:hover {
+        background-color: #20b358;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -98,13 +113,19 @@ if orders_file is not None:
                     image_url = df_final.iloc[idx]['Image Src']
                     size_quantity = df_final.iloc[idx]['Size & Quantity']
                     
-                    # Render the box with product details
+                    # Encode share message for WhatsApp
+                    share_message = f"{product_name}: {size_quantity}\nImage: {image_url}"
+                    encoded_message = urllib.parse.quote(share_message)
+                    whatsapp_url = f"https://api.whatsapp.com/send?text={encoded_message}"
+                    
+                    # Render the box with product details and WhatsApp share button
                     st.markdown(
                         f"""
                         <div class="product-box">
                             <div class="product-name">{product_name}</div>
                             <img src="{image_url}" style="max-width:100%; height:auto;" onerror="this.src='https://via.placeholder.com/150';">
                             <div class="size-quantity">{size_quantity}</div>
+                            <a href="{whatsapp_url}" target="_blank" class="whatsapp-button">Share on WhatsApp</a>
                         </div>
                         """,
                         unsafe_allow_html=True
