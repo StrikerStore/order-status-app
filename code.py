@@ -4,9 +4,8 @@ import pandas as pd
 # Streamlit app title
 st.title("Order Status Display")
 
-# File uploaders for both CSVs
+# File uploader for orders CSV only
 orders_file = st.file_uploader("Upload the orders CSV file", type=["csv"])
-products_file = st.file_uploader("Upload the products_export CSV file (optional)", type=["csv"])
 
 # Custom CSS for bordered box
 st.markdown("""
@@ -34,16 +33,12 @@ if orders_file is not None:
     # Load orders data
     df_new = pd.read_csv(orders_file)
 
-    # Load products data (use uploaded file or fallback to default if provided)
-    if products_file is not None:
-        product_data = pd.read_csv(products_file)
-    else:
-        # Fallback: Assume products_export.csv is in the same directory as app.py
-        try:
-            product_data = pd.read_csv("products_export.csv")
-        except FileNotFoundError:
-            st.error("Please upload products_export.csv or ensure it's in the app directory.")
-            st.stop()
+    # Load products data from repository
+    try:
+        product_data = pd.read_csv("products_export.csv")
+    except FileNotFoundError:
+        st.error("products_export.csv not found in the app directory. Please ensure it's uploaded to the repository.")
+        st.stop()
 
     # Process orders: Split into Product_Name and Size
     df_orders = (
