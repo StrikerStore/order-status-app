@@ -28,7 +28,7 @@ def check_password():
     
     def password_entered():
         """Checks whether a password entered by the user is correct."""
-        correct_password_hash = "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f"  # sha256 of "secure_password_2024"
+        correct_password_hash = "62b8171d2c7265e9a8bd7868ed74792f2a518afc577c490d8efb29e4e6446bee"
         entered_password_hash = hashlib.sha256(st.session_state["password"].encode()).hexdigest()
         
         if entered_password_hash == correct_password_hash:
@@ -39,7 +39,6 @@ def check_password():
 
     if "password_correct" not in st.session_state:
         st.text_input("Enter password:", type="password", on_change=password_entered, key="password")
-        st.info("💡 **For demo purposes:** The password is `secure_password_2024`")
         return False
     elif not st.session_state["password_correct"]:
         st.text_input("Enter password:", type="password", on_change=password_entered, key="password")
