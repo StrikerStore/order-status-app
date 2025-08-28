@@ -193,6 +193,10 @@ st.markdown("""
 
 if orders_file is not None:
     df_new = pd.read_csv(orders_file)
+    if "Error Remarks" in df_new.columns:
+        df_new = df_new.drop(columns=["Error Remarks"])
+    # Drop duplicates
+    df_new = df_new.drop_duplicates()
     try:
         product_data = pd.read_csv("products_export.csv")
     except FileNotFoundError:
