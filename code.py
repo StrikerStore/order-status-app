@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import hashlib
 import json
+import numpy as np
 
 # Set page configuration with custom logo and app name, with fallback
 logo_path = "square_logo.png"
@@ -57,24 +58,43 @@ if 'checked_boxes' not in st.session_state:
 if 'edited_quantities' not in st.session_state:
     st.session_state.edited_quantities = {}
 
+import re
+
 def sort_sizes(size_quantity_str):
+    if not isinstance(size_quantity_str, str):
+        return size_quantity_str
+
+    s = size_quantity_str.strip()
+
+    # Pull off an optional leading label like "Player " or "Fan "
+    m = re.match(r'^(Player|Fan)\s+', s, flags=re.I)
+    label = ''
+    if m:
+        label = m.group(1).title() + ' '   # keep nice casing
+        s = s[m.end():]                    # remove the label from the string we sort
+
+    # Define the order you want
     size_order = ['S', 'M', 'L', 'XL', '2XL']
-    pairs = size_quantity_str.split(', ')
-    size_qty_dict = {}
-    for pair in pairs:
-        if '-' in pair:
-            size, qty = pair.rsplit('-', 1)
-            size_qty_dict[size] = qty
-    sorted_pairs = []
-    for size in size_order:
-        if size in size_qty_dict:
-            sorted_pairs.append(f"{size}-{size_qty_dict[size]}")
-    for pair in pairs:
-        if '-' in pair:
-            size, qty = pair.rsplit('-', 1)
-            if size not in size_order:
-                sorted_pairs.append(pair)
-    return ', '.join(sorted_pairs)
+
+    # Parse pairs like "S-4", "2XL-7"
+    pairs = [p.strip() for p in s.split(',') if p.strip()]
+    ordered, others = [], []
+    for p in pairs:
+        if '-' in p:
+            size, qty = p.rsplit('-', 1)
+            size, qty = size.strip(), qty.strip()
+            if size in size_order:
+                ordered.append((size_order.index(size), f"{size}-{qty}"))
+            else:
+                others.append(p)  # keep unknown sizes as-is (after the known ones)
+
+    # Sort known sizes by your order, then append others in their original order
+    ordered_sorted = [pair for _, pair in sorted(ordered, key=lambda t: t[0])]
+    result = ', '.join(ordered_sorted + others)
+
+    # Reattach the label (once) at the start
+    return f"{label}{result}" if label else result
+
 
 def get_rto_info_for_product(product_name, rto_data):
     # Robust: strip and lower for both sides
@@ -194,7 +214,7 @@ st.markdown("""
 if orders_file is not None:
     df_new = pd.read_csv(orders_file)
     if "Error Remarks" in df_new.columns:
-        df_new = df_new.drop(columns=["Error Remarks"])
+        df_new = df_new.drop(columns=[col for col in df_new.columns if "Error Remarks" in col])
     # Drop duplicates
     df_new = df_new.drop_duplicates()
     try:
@@ -208,31 +228,64 @@ if orders_file is not None:
     except FileNotFoundError:
         st.warning("rto_details.csv not found. Please upload it.")
         st.stop()
+
+    # Regex pattern: removes the last -something if it's letters/numbers (sizes like M, L, XL, 2XL, 24-26, etc.)
+    pattern = r'-(?:[A-Za-z]+|\d+(?:-\d+)?)+$'
+
+    # For product_data
+    product_data = (
+        product_data.loc[product_data['Image Position'] == 1, ['Title', 'Image Src', 'Variant SKU']]
+        .assign(
+            SKU=lambda x: x['Variant SKU'].str.replace(pattern, '', regex=True)
+        )
+    )
+
+    # For df_orders
     df_orders = (
-        df_new[['*Product Name', '*Product Quantity']]
+        df_new[['*Product Name', '*Product Quantity', '*SKU']]
         .assign(
             Product_Name=lambda x: x['*Product Name'].str.rsplit(' - ', n=1).str[0],
-            Size=lambda x: x['*Product Name'].str.rsplit(' - ', n=1).str[1]
+            Size=lambda x: x['*Product Name'].str.rsplit(' - ', n=1).str[1],
+            SKU=lambda x: x['*SKU'].str.replace(pattern, '', regex=True)
         )
-        .drop(columns='*Product Name')
-    )
-    product_data = (
-        product_data.loc[product_data['Image Position'] == 1, ['Title', 'Image Src']]
+        .drop(columns=['*Product Name', '*SKU'])
     )
     df_orders_grouped = (
-        df_orders.groupby(['Product_Name', 'Size'])['*Product Quantity']
+        df_orders.groupby(['Product_Name', 'Size', 'SKU'])['*Product Quantity']
         .sum()
         .reset_index()
     )
+
+
     df_size_qty = (
         df_orders_grouped
-        .assign(Size_Quantity=lambda x: x['Size'] + '-' + x['*Product Quantity'].astype(str))
+        .assign(
+            Size_Quantity=lambda x: x['Size'] + '-' + x['*Product Quantity'].astype(str),
+            SKU=lambda x: x['SKU']
+        )
         .groupby('Product_Name')
-        .agg({'Size_Quantity': ', '.join})
+        .agg({
+            'Size_Quantity': ', '.join,
+            'SKU': 'first'
+        })
         .reset_index()
+        .assign(
+            Size_Quantity=lambda x: np.where(
+                x['Product_Name'].str.contains("Player", case=False, na=False),
+                "Player " + x['Size_Quantity'],
+                np.where(
+                    x['Product_Name'].str.contains("Fan", case=False, na=False),
+                    "Fan " + x['Size_Quantity'],
+                    x['Size_Quantity']
+                )
+            )
+        )
     )
+
+
+
     df_size_qty['Size_Quantity'] = df_size_qty['Size_Quantity'].apply(sort_sizes)
-    df_final = pd.merge(df_size_qty, product_data, left_on='Product_Name', right_on='Title', how='left')
+    df_final = pd.merge(df_size_qty, product_data, left_on='SKU', right_on='SKU', how='left')
     df_final = df_final.rename(columns={'Product_Name': 'Product Name', 'Size_Quantity': 'Size & Quantity'})
     st.subheader("Product Grid")
     total_products = len(df_final)
