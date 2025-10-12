@@ -240,8 +240,6 @@ if orders_file is not None:
         )
     )
 
-    print(df_new.columns)
-
     # For df_orders
     df_orders = (
         df_new[['*Product Name', '*Product Quantity', '*SKU']]
